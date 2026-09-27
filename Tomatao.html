@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomato Support Chat</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f7f9fb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            width: 450px;
+            height: 600px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-header {
+            background-color: #ff4757;
+            color: white;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        .user-message {
+            background-color: #e1ffda;
+            align-self: flex-end;
+            color: #2c3e50;
+        }
+        .bot-message {
+            background-color: #f1f2f6;
+            align-self: flex-start;
+            color: #2c3e50;
+        }
+        .chat-input-area {
+            border-top: 1px solid #ededed;
+            padding: 12px;
+            display: flex;
+            gap: 10px;
+            background-color: #fff;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            outline: none;
+            font-size: 0.95rem;
+        }
+        .chat-input:focus {
+            border-color: #ff4757;
+        }
+        .send-btn {
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            padding: 0 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .send-btn:hover {
+            background-color: #e03d4b;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">🍅 Tomato Customer Support</div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message">Hello! Welcome to Tomato Support. How can I help you with your order today?</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Type your message here..." autocomplete="off">
+            <button id="send-btn" class="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // CHANGE THIS URL TO MATCH YOUR SPRING BOOT CONTROLLER MAPPING
+        const BACKEND_URL = 'http://localhost:8080/api/chat'; 
+
+        function appendMessage(text, className) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${className}`;
+            msgDiv.innerText = text;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to bottom
+        }
+
+        async function sendMessage() {
+            const messageText = chatInput.value.trim();
+            if (!messageText) return;
+
+            // 1. Display User Message
+            appendMessage(messageText, 'user-message');
+            chatInput.value = '';
+
+            try {
+                // 2. Send to Spring Boot Backend
+                // Note: Adjust the body format (JSON vs Plain Text) depending on how your @RestController handles it
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: messageText })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Server responded with an error');
+                }
+
+                const replyText = await response.text();
+                
+                // 3. Display Bot Reply
+                appendMessage(replyText, 'bot-message');
+
+            } catch (error) {
+                console.error(error);
+                appendMessage('Error: Could not connect to Tomato servers.', 'bot-message');
+            }
+        }
+
+        // Event Listeners for Button Click and Enter Key
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
